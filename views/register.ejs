@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register New User</title>
+    <link rel="stylesheet" type="text/css" href="/styles.css">
+</head>
+<body>
+
+    <h2><%= header %></h2>
+    <form>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username">
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password">
+
+        <button type="submit" formaction="/users" formmethod="POST">Register</button>
+
+        <!-- "Back" button inside the form for aesthetic reasons -->
+        <button type ="submit" formaction="/" formmethod="GET">Back</button>
+    </form>
+</body>
+</html>
