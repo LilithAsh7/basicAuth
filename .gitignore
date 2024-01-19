@@ -1,3 +1,5 @@
 .env
 views/pic.jpg
 node_modules/*
+package.json
+package-lock.json
