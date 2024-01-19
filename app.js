@@ -2,6 +2,7 @@
 const express = require('express');
 const app = express();
 const port = 3001;
+const csrf = require('csurf');
 // Passport for use authentication and login purposes.
 const passport = require('passport');
 const LocalStrategy = require('passport-local');
@@ -25,6 +26,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 
 app.use(cookieParser());
+const csrfProtect = csrf({ cookie: true });
 // Removes compatibility issues and lets you use ejs files instead of just html
 app.use(express.static(path.join(__dirname, 'views')));
 app.set('view engine', 'ejs');
@@ -40,8 +42,6 @@ const pool = new Pool({
 
 passport.use(new LocalStrategy(
     function(username, password, done) {
-        console.log(username);
-        console.log(password);
         const passwordIsDangerous = sqlSecurity.checkForSqlCharacters(password);
         const usernameIsDangerous = sqlSecurity.checkForSqlCharacters(username);
         if (!usernameIsDangerous && !passwordIsDangerous) {
@@ -62,6 +62,7 @@ passport.use(new LocalStrategy(
                     if(passwordMatch){
                             return done(null, username);
                     } else {
+                        console.log("Wrong password");
                         done(null, false);
                     }
                     
@@ -69,7 +70,7 @@ passport.use(new LocalStrategy(
             });
         } else {
             console.log("DANGEROUS INPUT DETECTED ON USERNAME OR PASSWORD!");
-            res.redirect('/');
+            done(null, false);
         }
     }
   ));
@@ -92,7 +93,7 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.post('/login', passport.authenticate(
+app.post('/login', csrfProtect, passport.authenticate(
     'local', {
         successRedirect: '/profile',
         failureRedirect: '/'
