@@ -16,7 +16,7 @@ const sqlSecurity = require('./sqlSecurity')
 const passport = require("passport");
 
 // API call to get all data from users table
-const getUsers = (request, response) => {
+const getUsers = (req, res) => {
 
     // Constructs sql code
     pool.query('SELECT * FROM users ORDER BY id ASC', (error, results) => {
@@ -24,15 +24,15 @@ const getUsers = (request, response) => {
       if (error) {
         throw error
       }
-      //Returns response that consists of all data gotten by sql code
-      response.status(200).json(results.rows)
+      //Returns res that consists of all data gotten by sql code
+      res.status(200).json(results.rows)
     })
 }
 
 // API call to get user by a specific ID
-const getUserById = (request, response) => {
+const getUserById = (req, res) => {
     // Specified ID to grab
-    const id = parseInt(request.params.id)
+    const id = parseInt(req.params.id)
     // Constructs sql code
     pool.query('SELECT * FROM users WHERE id = $1', [id], (error, results) => {
       // Error handling
@@ -40,7 +40,7 @@ const getUserById = (request, response) => {
         throw error
       }
       // Returns all data gotten by sql code
-      response.status(200).json(results.rows)
+      res.status(200).json(results.rows)
     })
 }
 
@@ -61,13 +61,13 @@ const getUserByUsername = (req, res) => {
 }
 
 // API call to create entry into user database
-const createUser = (request, response) => {
+const createUser = (req, res) => {
     // Variables to be inserted into database
-    const { username, password } = request.body;
+    const { username, password } = req.body;
     const passwordIsDangerous = sqlSecurity.checkForSqlCharacters(password);
     const usernameIsDangerous = sqlSecurity.checkForSqlCharacters(username);
     if (!usernameIsDangerous && !passwordIsDangerous) {
-      // Encrypts password
+      // Encrypts passwordresreq
       bcrypt.hash(password, saltRounds, (err, hashedPassword) => {
         // Error handling for bcrypt.hash function  
         if (err) {
@@ -79,11 +79,11 @@ const createUser = (request, response) => {
           // Error handling
           if (error) {
               if (error.code === '23505' && error.constraint === 'unique_username') {
-                  return response.redirect('/register?header=Username%20already%20taken');
+                  return res.redirect('/register?header=Username%20already%20taken');
               }
               throw(error);
           }
-          return response.redirect('/');
+          return res.redirect('/');
         });
       });
     } else {
@@ -93,11 +93,11 @@ const createUser = (request, response) => {
 };
 
 // API call to update entry in user table
-const updateUser = (request, response) => {
+const updateUser = (req, res) => {
     // Specific ID of entry to update
-    const id = parseInt(request.params.id);
+    const id = parseInt(req.params.id);
     // Variables to be put into database
-    const { username, password } = request.body;
+    const { username, password } = req.body;
     // Encrypts password
     bcrypt.hash(password, saltRounds, (err, hashedPassword) => {
       // Error handling for encryption
@@ -111,10 +111,10 @@ const updateUser = (request, response) => {
         (error, results) => {
           // Error handling
           if (error) {
-            response.status(500).send('Error updating user.');
+            res.status(500).send('Error updating user.');
           } else {
-            // Returns response saying entry was modified
-            response.status(200).send(`User modified with ID: ${id}`);
+            // Returns res saying entry was modified
+            res.status(200).send(`User modified with ID: ${id}`);
           }
         }
       );
@@ -122,17 +122,17 @@ const updateUser = (request, response) => {
 };
 
 // API call to delete entry from user table
-const deleteUser = (request, response) => {
+const deleteUser = (req, res) => {
     // Specific id of entry to delete
-    const id = parseInt(request.params.id)
+    const id = parseInt(req.params.id)
     // Constructs sql code
     pool.query('DELETE FROM users WHERE id = $1', [id], (error, results) => {
       // Error handling
       if (error) {
         throw error
       }
-      // Returns response saying that specified entry in users table was deleted
-      response.status(200).send(`User deleted with ID: ${id}`)
+      // Returns res saying that specified entry in users table was deleted
+      res.status(200).send(`User deleted with ID: ${id}`)
     })
 }
 
