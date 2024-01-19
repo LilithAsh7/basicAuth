@@ -12,10 +12,19 @@ const cookieParser = require('cookie-parser');
 const pgSession = require('connect-pg-simple')(session);
 // Module for working with file paths
 const path = require('path');
-const usersQueries = require('./server/usersQueries')
 const bodyParser = require('body-parser');
+const { router, authenticationMiddleware } = require('./server/index')
 
 require('dotenv').config();
+
+// Setting app to use bodyParser
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: true}));
+
+app.use(cookieParser());
+// Removes compatibility issues and lets you use ejs files instead of just html
+app.use(express.static(path.join(__dirname, 'views')));
+app.set('view engine', 'ejs');
 
 const Pool = require('pg').Pool;
 const pool = new Pool({
@@ -25,14 +34,13 @@ const pool = new Pool({
     password: process.env.db_password,
     port: process.env.db_port
 })
-// Setting app to use bodyParser
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: true}));
 
-app.use(cookieParser());
-// Removes compatibility issues and lets you use ejs files instead of just html
-app.use(express.static(path.join(__dirname, 'views')));
-app.set('view engine', 'ejs');
+passport.use(new LocalStrategy(
+    function(username, password, done) {
+        return done(null, 'fasd');
+    }
+  ));
+
 //Setting up cookies so that authentication can be kept track of
 app.use(
     session({
@@ -46,32 +54,10 @@ app.use(
       cookie: { maxAge: 30 * 24 * 60 * 60 * 1000}
     })
 );
+
 // Initialize passport
 app.use(passport.initialize());
 app.use(passport.session());
-
-function authenticationMiddleware () {  
-	return (req, res, next) => {
-		console.log(`req.session.passport.user: ${JSON.stringify(req.session.passport)}`);
-
-	    if (req.isAuthenticated()){ return next(); }
-	    
-      else { res.redirect('/') }
-	}
-}
-
-passport.use(new LocalStrategy(
-    function(username, password, done) {
-        return done(null, 'fasd');
-    }
-  ));
-
-app.get('/', (req, res) => {
-    res.render('login');
-})
-
-app.get('/profile',  authenticationMiddleware(), (req, res) => { res.render('profile')});
-
 
 app.post('/login', passport.authenticate(
     'local', {
@@ -79,22 +65,12 @@ app.post('/login', passport.authenticate(
         failureRedirect: '/'
 }));
 
-app.get('/logout',  authenticationMiddleware(), (req, res) => {
+app.get('/logout', authenticationMiddleware(), (req, res) => {
     req.session.destroy();
     res.redirect('/');
   })
 
-app.post('/users', usersQueries.createUser);
-app.get('/register', (req, res) => { 
-
-    let header;
-    if (!req.query.header) {
-        header = 'Register new user';
-    } else {
-        header = req.query.header;
-    }
-    res.render('register', {header});
-});
+app.use('/', router);
 
 //Starts the application listening for api calls
 app.listen(port, () => {
