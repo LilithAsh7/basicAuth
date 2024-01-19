@@ -14,6 +14,9 @@ const pgSession = require('connect-pg-simple')(session);
 const path = require('path');
 const bodyParser = require('body-parser');
 const { router, authenticationMiddleware } = require('./server/index')
+const sqlSecurity = require('./server/sqlSecurity')
+const bcrypt = require('bcrypt')
+const saltRounds = 10;
 
 require('dotenv').config();
 
@@ -37,7 +40,37 @@ const pool = new Pool({
 
 passport.use(new LocalStrategy(
     function(username, password, done) {
-        return done(null, 'fasd');
+        console.log(username);
+        console.log(password);
+        const passwordIsDangerous = sqlSecurity.checkForSqlCharacters(password);
+        const usernameIsDangerous = sqlSecurity.checkForSqlCharacters(username);
+        if (!usernameIsDangerous && !passwordIsDangerous) {
+            pool.query('SELECT * FROM users WHERE username = $1', [username], async (error, results) => {
+                if (error) {
+                    done(error);
+                }
+                  // If the result is empty then it knows that no user was found
+                if (results.rows.length === 0) {
+                    done(null, false);
+                } else {
+                    const user_id = results.rows[0].id;
+                    const username = results.rows[0].username;
+                    // When a user is found the supplied password gets hashed
+                    const hashedPassword = results.rows[0].password;
+                    // The hased password gets compared to the one in the database
+                    const passwordMatch = await bcrypt.compare(password, hashedPassword);
+                    if(passwordMatch){
+                            return done(null, username);
+                    } else {
+                        done(null, false);
+                    }
+                    
+                }
+            });
+        } else {
+            console.log("DANGEROUS INPUT DETECTED ON USERNAME OR PASSWORD!");
+            res.redirect('/');
+        }
     }
   ));
 
