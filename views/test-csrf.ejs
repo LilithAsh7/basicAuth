@@ -1,0 +1,7 @@
+<h1>CSRF Token Test</h1>
+
+<form action="/test-csrf" method="post">
+    <!-- CSRF Token -->
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button type="submit">Submit</button>
+</form>
