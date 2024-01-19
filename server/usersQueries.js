@@ -17,6 +17,7 @@ const passport = require("passport");
 
 // API call to get all data from users table
 const getUsers = (req, res) => {
+  console.log("getUsers() in usersQueries.js")
 
     // Constructs sql code
     pool.query('SELECT * FROM users ORDER BY id ASC', (error, results) => {
@@ -31,6 +32,7 @@ const getUsers = (req, res) => {
 
 // API call to get user by a specific ID
 const getUserById = (req, res) => {
+  console.log("getUserById() in usersQueries.js")
     // Specified ID to grab
     const id = parseInt(req.params.id)
     // Constructs sql code
@@ -62,6 +64,7 @@ const getUserByUsername = (req, res) => {
 
 // API call to create entry into user database
 const createUser = (req, res) => {
+  console.log("createUser() in usersQueries.js")
     // Variables to be inserted into database
     const { username, password } = req.body;
     const passwordIsDangerous = sqlSecurity.checkForSqlCharacters(password);
@@ -83,7 +86,7 @@ const createUser = (req, res) => {
               }
               throw(error);
           }
-          return res.redirect('/');
+          return res.status(200).redirect('/');
         });
       });
     } else {
@@ -94,6 +97,7 @@ const createUser = (req, res) => {
 
 // API call to update entry in user table
 const updateUser = (req, res) => {
+  console.log("updateUser() in usersQueries.js")
     // Specific ID of entry to update
     const id = parseInt(req.params.id);
     // Variables to be put into database
@@ -123,6 +127,7 @@ const updateUser = (req, res) => {
 
 // API call to delete entry from user table
 const deleteUser = (req, res) => {
+  console.log("deleteUser() in usersQueries.js")
     // Specific id of entry to delete
     const id = parseInt(req.params.id)
     // Constructs sql code
