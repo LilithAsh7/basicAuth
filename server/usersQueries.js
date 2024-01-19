@@ -11,6 +11,7 @@ const pool = new Pool({
 // saltRounds dictates how much power to put towards hashing
 const bcrypt = require('bcrypt')
 const saltRounds = 10;
+const sqlSecurity = require('./sqlSecurity')
 
 const passport = require("passport");
 
@@ -47,25 +48,32 @@ const getUserById = (request, response) => {
 const createUser = (request, response) => {
     // Variables to be inserted into database
     const { username, password } = request.body;
-    // Encrypts password
-    bcrypt.hash(password, saltRounds, (err, hashedPassword) => {
-      // Error handling for bcrypt.hash function  
-      if (err) {
-            throw err;
-      }
-      // Constructs sql code
-      // Note this adds the hashed password to the database, not the input password
-      pool.query('INSERT INTO users (username, password) VALUES ($1, $2) RETURNING *', [username, hashedPassword], (error, results) => {
-        // Error handling
-        if (error) {
-            if (error.code === '23505' && error.constraint === 'unique_username') {
-                return response.redirect('/register?header=Username%20already%20taken');
-            }
-            throw(error);
+    const passwordIsDangerous = sqlSecurity.checkForSqlCharacters(password);
+    const usernameIsDangerous = sqlSecurity.checkForSqlCharacters(username);
+    if (!usernameIsDangerous && !passwordIsDangerous) {
+      // Encrypts password
+      bcrypt.hash(password, saltRounds, (err, hashedPassword) => {
+        // Error handling for bcrypt.hash function  
+        if (err) {
+              throw err;
         }
-        return response.redirect('/');
+        // Constructs sql code
+        // Note this adds the hashed password to the database, not the input password
+        pool.query('INSERT INTO users (username, password) VALUES ($1, $2) RETURNING *', [username, hashedPassword], (error, results) => {
+          // Error handling
+          if (error) {
+              if (error.code === '23505' && error.constraint === 'unique_username') {
+                  return response.redirect('/register?header=Username%20already%20taken');
+              }
+              throw(error);
+          }
+          return response.redirect('/');
+        });
       });
-    });
+    } else {
+      console.log("DANGEROUS INPUT DETECTED ON USERNAME OR PASSWORD!");
+      res.redirect('/register');
+    }
 };
 
 // API call to update entry in user table
