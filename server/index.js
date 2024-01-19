@@ -32,6 +32,7 @@ router.get('/', csrfProtect, (req, res) => {
 router.get('/profile',  authenticationMiddleware(), (req, res) => { res.render('profile')});
 
 router.post('/users', csrfProtect, usersQueries.createUser);
+router.get('/users/:username', usersQueries.getUserByUsername);
 router.get('/register', csrfProtect, (req, res) => { 
 
     let header;
@@ -40,7 +41,9 @@ router.get('/register', csrfProtect, (req, res) => {
     } else {
         header = req.query.header;
     }
-    res.render('register', {csrfToken: req.csrfToken(), header});
+    const csrfToken = req.csrfToken();
+    console.log("csrfToken in register route: " + csrfToken);
+    res.render('register', {csrfToken: csrfToken, header});
 });
 
 module.exports = {
