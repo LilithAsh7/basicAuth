@@ -1,8 +1,10 @@
 const express = require('express');
+const csrf = require('csurf');
 const cookieParser = require('cookie-parser');
 const router = express.Router();
 const usersQueries = require('./usersQueries')
 router.use(cookieParser());
+const csrfProtect = csrf({ cookie: true });
 
 function authenticationMiddleware () {  
 	return (req, res, next) => {
@@ -14,14 +16,23 @@ function authenticationMiddleware () {
 	}
 }
 
-router.get('/', (req, res) => {
-    res.render('login');
+// Example route for testing CSRF protection
+router.get('/test-csrf', csrfProtect, (req, res) => {
+    res.render('test-csrf', { csrfToken: req.csrfToken() });
+});
+
+router.post('/test-csrf', csrfProtect, (req, res) => {
+    res.send('CSRF token is valid!');
+});
+
+router.get('/', csrfProtect, (req, res) => {
+    res.render('login', { csrfToken: req.csrfToken() });
 })
 
 router.get('/profile',  authenticationMiddleware(), (req, res) => { res.render('profile')});
 
-router.post('/users', usersQueries.createUser);
-router.get('/register', (req, res) => { 
+router.post('/users', csrfProtect, usersQueries.createUser);
+router.get('/register', csrfProtect, (req, res) => { 
 
     let header;
     if (!req.query.header) {
@@ -29,7 +40,7 @@ router.get('/register', (req, res) => {
     } else {
         header = req.query.header;
     }
-    res.render('register', {header});
+    res.render('register', {csrfToken: req.csrfToken(), header});
 });
 
 module.exports = {
